@@ -46,3 +46,45 @@ def listar_recepcion() -> str:
     if not archivos:
         return "No hay archivos en recepcion."
     return "\n".join(archivos)
+
+@mcp.tool()
+def leer_archivo(nombre_archivo: str) -> str:
+    """Lee el contenido de un archivo situado en la carpeta recepcion."""
+    ruta = os.path.join(CARPETA_RECEPCION, nombre_archivo)
+    
+    if not os.path.exists(ruta):
+        return f"Error: El archivo '{nombre_archivo}' no existe en recepcion."
+        
+    with open(ruta, "r", encoding="utf-8") as archivo:
+        return archivo.read()
+
+@mcp.tool()
+def mover_a_tema(nombre_archivo: str, tema: str) -> str:
+    """Crea la carpeta del tema si no existe y mueve el archivo desde recepcion a ese tema."""
+    origen = os.path.join(CARPETA_RECEPCION, nombre_archivo)
+    carpeta_tema = os.path.join(CARPETA_CLASIFICADOS, tema)
+    destino = os.path.join(carpeta_tema, nombre_archivo)
+    
+    if not os.path.exists(origen):
+        return f"Error: No se encontró '{nombre_archivo}' en recepcion."
+        
+    os.makedirs(carpeta_tema, exist_ok=True)
+    shutil.move(origen, destino)
+    return f"Archivo '{nombre_archivo}' movido a la carpeta '{tema}'."
+
+@mcp.tool()
+def listar_archivos_por_tema(tema: str) -> str:
+    """Lista los archivos guardados dentro de la carpeta de un tema específico."""
+    carpeta_tema = os.path.join(CARPETA_CLASIFICADOS, tema)
+    
+    if not os.path.exists(carpeta_tema):
+        return f"No existe la carpeta del tema '{tema}' aún."
+        
+    archivos = os.listdir(carpeta_tema)
+    if not archivos:
+        return f"No hay archivos en el tema '{tema}'."
+    return "\n".join(archivos)
+
+
+if __name__ == "__main__":
+    mcp.run()
