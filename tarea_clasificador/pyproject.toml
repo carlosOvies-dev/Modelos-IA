@@ -1,0 +1,25 @@
+[project]
+name = "tarea-clasificador"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "carlosOvies-dev", email = "cmaronoovies@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "langchain-core>=1.7.7",
+    "langchain-google-genai>=4.4.3",
+    "langchain-mcp-adapters>=0.3.2",
+    "langchain-ollama>=1.1.0",
+    "langgraph>=1.2.20",
+    "mcp<2.0.0",
+    "python-dotenv>=1.2.4",
+]
+
+[project.scripts]
+tarea-clasificador = "tarea_clasificador:main"
+
+[build-system]
+requires = ["uv_build>=0.13.6,<0.14.0"]
+build-backend = "uv_build"
