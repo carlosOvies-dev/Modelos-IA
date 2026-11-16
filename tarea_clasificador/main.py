@@ -28,13 +28,13 @@ async def ainput(prompt: str) -> str:
 # Función principal asíncrona
 async def main():
     # Seleccionamos el modelo ("gemini" u "ollama")
-    llm = obtener_llm("gemini", "gemini-2.5-flash")
+    llm = obtener_llm()
     # llm = obtener_llm("ollama", "llama3.1:8b-instruct-q4_K_M")
 
-    # Elegimos qué versión del clasificador usar ("A" = Agente ReAct, "B" = Dirigido Python)
-    modo_clasificador = "A"
+    # Elegimos que version del clasificador usar ("A" = Agente ReAct, "B" = Dirigido Python)
+    modo_clasificador = "B"
 
-    # Conectamos con el servidor MCP en segundo plano
+    # Conectamos con el servidor MCP en segundo plano 
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
