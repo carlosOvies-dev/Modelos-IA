@@ -3,35 +3,45 @@ import os
 import shutil
 from mcp.server.fastmcp import FastMCP
 
-# Inicializamos el servidor MCP
+# Arranco el servidor MCP y le pongo nombre
 mcp = FastMCP("ServidorArchivos")
 
-# Rutas de las carpetas del proyecto
+# Estas son las rutas de las carpetas del proyecto, las guardo en variables para que sea mas comodo usarlas luego
 CARPETA_PROYECTO = os.path.dirname(os.path.abspath(__file__))
 CARPETA_BASE = os.path.join(CARPETA_PROYECTO, "base")
 CARPETA_RECEPCION = os.path.join(CARPETA_PROYECTO, "recepcion")
 CARPETA_CLASIFICADOS = os.path.join(CARPETA_PROYECTO, "clasificados")
 
-# Creamos las carpetas principales si no existen
+# Si las carpetas no existen al bajar el proyecto esto las crea solas para que no de fallo al guardar archivos
 os.makedirs(CARPETA_BASE, exist_ok=True)
 os.makedirs(CARPETA_RECEPCION, exist_ok=True)
 os.makedirs(CARPETA_CLASIFICADOS, exist_ok=True)
 
-
+# Aqui empiezan las herramientas del servidor MCP.
+# El texto que va entre tres comillas debajo de cada def es muy importante porque es lo que lee el modelo para saber que hace cada herramienta.
+# La de leer_archivo la uso tanto para que el clasificador saque el texto antes de clasificarlo como por si le pedimos al consultor que nos diga que pone un archivo.
+# Al final, como no tenia claro si para ver los clasificados habia que mirar una carpeta en concreto o todas a la vez, hice dos herramientas: una para consultar una sola categoria y otra para listar todas.
 @mcp.tool()
 def copiar_a_recepcion(nombre_archivo: str) -> str:
-    """Copia un archivo existente desde la carpeta base a la carpeta recepcion."""
-    if not nombre_archivo.endswith(".txt"):
-        nombre_archivo = nombre_archivo + ".txt"
+    """Copia uno o varios archivos existentes (separados por comas) desde la carpeta base a la carpeta recepcion."""
+    # Separo por comas o por la palabra ' y ' por si pido copiar varios archivos a la vez
+    nombres = [n.strip() for n in nombre_archivo.replace(" y ", ",").split(",") if n.strip()]
+    resultados = []
 
-    origen = os.path.join(CARPETA_BASE, nombre_archivo)
-    destino = os.path.join(CARPETA_RECEPCION, nombre_archivo)
+    for nombre in nombres:
+        if not nombre.endswith(".txt"):
+            nombre = nombre + ".txt"
 
-    if not os.path.exists(origen):
-        return f"El archivo '{nombre_archivo}' no existe en la carpeta base."
+        origen = os.path.join(CARPETA_BASE, nombre)
+        destino = os.path.join(CARPETA_RECEPCION, nombre)
 
-    shutil.copy2(origen, destino)
-    return f"El archivo '{nombre_archivo}' se ha copiado correctamente a recepción."
+        if not os.path.exists(origen):
+            resultados.append(f"Error: El archivo '{nombre}' no existe en la carpeta base.")
+        else:
+            shutil.copy2(origen, destino)
+            resultados.append(f"El archivo '{nombre}' se ha copiado correctamente a recepción.")
+
+    return "\n".join(resultados)
 
 
 @mcp.tool()
@@ -88,6 +98,7 @@ def mover_a_tema(nombre_archivo: str, tema: str) -> str:
     if not os.path.exists(origen):
         return f"Error: No se encontró '{nombre_archivo}' en recepción."
 
+    # Limpio el nombre del tema por si el modelo le pone un punto final y creo su carpeta si no existe
     tema_limpio = tema.strip(" .,;:").capitalize()
     carpeta_tema = os.path.join(CARPETA_CLASIFICADOS, tema_limpio)
     os.makedirs(carpeta_tema, exist_ok=True)

@@ -4,37 +4,29 @@ from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_ollama import ChatOllama
 
-# Cargamos las variables del archivo .env
+# Aqui cargo las variables de entorno, en ellas se pueden cambiar tanto el modelo de gemini como el de ollama y la Api de gemini.
+# Uso variables de entorno porque me parece mas facil y limpio a la hora de configurar las cosas sin tener que estar buscando una variable por el codigo
 load_dotenv()
 
-def obtener_llm(tipo=None, nombre_modelo=None):
-    # Leemos la clave de Google del archivo .env
+
+def obtener_llm():
+    # Miro si hay metida una API key de gemini
     clave = os.getenv("API_KEY_IA", "").strip()
 
-    # Si no nos pasan el tipo o si la clave de Google esta vacia, usamos Ollama
-    if tipo is None:
-        if clave != "" and clave != "tu_clave_de_google_aqui":
-            tipo = "gemini"
-        else:
-            print("[Aviso] No hay API_KEY_IA válida en .env -> Usando Ollama por defecto.")
-            tipo = "ollama"
-
-    if tipo == "gemini":
-        if nombre_modelo is None:
-            nombre_modelo = os.getenv("MODELO_GEMINI", "gemini-2.5-flash")
+    # Si la clave no esta vacia usamos gemini cogiendo el modelo del .env
+    if clave != "":
+        nombre_modelo = os.getenv("MODELO_GEMINI")
         return ChatGoogleGenerativeAI(
             model=nombre_modelo,
-            google_api_key=clave,
-            temperature=0
+            google_api_key=clave
         )
-    elif tipo == "ollama":
-        if nombre_modelo is None:
-            nombre_modelo = os.getenv("MODELO_OLLAMA", "llama3.1:8b-instruct-q4_K_M")
-        url_ollama = os.getenv("URL_OLLAMA", "http://localhost:11434")
+    # Si esta vacia usamos ollama por defecto con su modelo y su url del .env
+    else:
+        print("[Aviso] No hay API_KEY_IA en .env -> Usando Ollama por defecto.")
+        nombre_modelo = os.getenv("MODELO_OLLAMA")
+        url_ollama = os.getenv("URL_OLLAMA")
         return ChatOllama(
             model=nombre_modelo,
             temperature=0,
             base_url=url_ollama
         )
-    else:
-        raise ValueError("El tipo debe ser 'gemini' o 'ollama'")

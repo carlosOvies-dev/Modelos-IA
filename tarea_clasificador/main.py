@@ -10,7 +10,7 @@ from mcp.client.stdio import stdio_client
 from modelos import obtener_llm
 from grafo import crear_grafo
 
-# Configuramos los parámetros para arrancar servicio_mcp.py automáticamente
+# Busco la ruta donde esta servicio_mcp.py y preparo los parametros para que se arranque solo
 ruta_servidor = os.path.join(os.path.dirname(os.path.abspath(__file__)), "servicio_mcp.py")
 
 server_params = StdioServerParameters(
@@ -20,44 +20,53 @@ server_params = StdioServerParameters(
 )
 
 
-# Función para leer por teclado sin bloquear asyncio
+# Uso esta funcion para leer por teclado sin que se quede bloqueado el programa al ser asincrono
 async def ainput(prompt: str) -> str:
     return await asyncio.to_thread(input, prompt)
 
 
-# Función principal asíncrona
 async def main():
-    # Seleccionamos el modelo ("gemini" u "ollama")
+    # Cargo el modelo (segun lo que haya en el .env cogera gemini u ollama)
     llm = obtener_llm()
-    # llm = obtener_llm("ollama", "llama3.1:8b-instruct-q4_K_M")
 
-    # Elegimos que version del clasificador usar ("A" = Agente ReAct, "B" = Dirigido Python)
-    modo_clasificador = "B"
+    # Creo el id de la sesion para que el grafo guarde la memoria de la conversacion
+    config = {"configurable": {"thread_id": "sesion_clase"}}
 
-    # Conectamos con el servidor MCP en segundo plano 
+    # Arranco y conecto el servidor MCP en segundo plano
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
 
-            # Cargamos todas las herramientas de servicio_mcp.py
+            # Saco las herramientas que tenemos en servicio_mcp.py
             mcp_tools = await load_mcp_tools(session)
 
-            # Construimos el grafo pasándole el modelo, las tools y el modo elegido
-            app = crear_grafo(llm, mcp_tools, modo_clasificador=modo_clasificador)
+            # Monto el grafo pasandole el modelo y las herramientas
+            app = crear_grafo(llm, mcp_tools)
 
+            # Bucle para hablar con el agente por consola
             while True:
                 pregunta = await ainput("\nUsuario>>> ")
 
+                # Si escribo salir se cierra el programa
                 if pregunta.strip().lower() in ["salir", "exit", "quit"]:
                     break
 
+                # Si doy al enter sin escribir nada, vuelve a preguntar
                 if not pregunta.strip():
                     continue
 
-                inputs = {"messages": [HumanMessage(content=pregunta)]}
-                resultado = await app.ainvoke(inputs)
-                respuesta_final = resultado["messages"][-1].content
+                # Si escribo reiniciar, cambio el id de sesion para empezar con la memoria limpia
+                if pregunta.strip().lower() == "reiniciar":
+                    config = {"configurable": {"thread_id": f"sesion_{os.urandom(4).hex()}"}}
+                    print("¡Memoria limpia y nueva sesión iniciada!")
+                    continue
 
+                # Meto la pregunta del usuario y llamo al grafo pasandole la configuracion de memoria
+                inputs = {"messages": [HumanMessage(content=pregunta)]}
+                resultado = await app.ainvoke(inputs, config=config)
+                
+                # Cojo el ultimo mensaje que devuelve el grafo y lo muestro por pantalla
+                respuesta_final = resultado["messages"][-1].content
                 print(f"Respuesta:\n{respuesta_final}")
 
 
