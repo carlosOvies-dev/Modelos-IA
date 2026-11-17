@@ -55,7 +55,7 @@ async def main():
                 if not pregunta.strip():
                     continue
 
-                # Si escribo reiniciar, cambio el id de sesion para empezar con la memoria limpia
+                # Con reiniciar cambio el thread_id para empezar una sesion nueva limpia (MemorySaver sigue guardando la anterior en RAM)
                 if pregunta.strip().lower() == "reiniciar":
                     config = {"configurable": {"thread_id": f"sesion_{os.urandom(4).hex()}"}}
                     print("¡Memoria limpia y nueva sesión iniciada!")

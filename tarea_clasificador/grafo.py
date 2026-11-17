@@ -91,7 +91,7 @@ def crear_grafo(llm, mcp_tools):
         print(f" [Enrutador] -> Enviando a: {destino.upper()}")
         return {"next_agent": destino}
 
-    # Nodo recepcion: agente que solo tiene las herramientas de meter archivos en la carpeta recepcion
+   # Nodo recepcion: agente que solo tiene las herramientas de meter archivos en la carpeta recepcion
     async def nodo_recepcion(state: AgentState):
         agente = create_react_agent(llm, tools=tools_recepcion)
         prompt_sistema = SystemMessage(
@@ -100,9 +100,17 @@ def crear_grafo(llm, mcp_tools):
         mensajes_para_agente = [prompt_sistema, state["messages"][-1]]
         respuesta_sub_agente = await agente.ainvoke({"messages": mensajes_para_agente})
 
+        # Buscamos de atras hacia adelante el ultimo mensaje que sea de tipo 'tool'
+        # en lugar de asumir una posicion fija (-2) en la lista
+        ultimo_mensaje_tool = None
+        for msg in reversed(respuesta_sub_agente["messages"]):
+            if getattr(msg, "type", "") == "tool":
+                ultimo_mensaje_tool = msg
+                break
+
         # Si uso una herramienta MCP, cojo directamente el mensaje que devuelve la herramienta
-        if len(respuesta_sub_agente["messages"]) >= 3:
-            texto_tool = extraer_contenido(respuesta_sub_agente["messages"][-2].content)
+        if ultimo_mensaje_tool is not None:
+            texto_tool = extraer_contenido(ultimo_mensaje_tool.content)
             return {"messages": [("assistant", texto_tool)]}
 
         respuesta_final = respuesta_sub_agente["messages"][-1]
@@ -187,9 +195,6 @@ def crear_grafo(llm, mcp_tools):
                 "- No fuerces la elección de una categoría si su temática es diferente.\n"
                 "- Si ninguna categoría representa adecuadamente el contenido, "
                 "propón una nueva que describa su temática de forma natural.\n\n"
-                "Ejemplo orientativo:\n"
-                "Una receta de tortilla pertenece a Cocina, no a Salud "
-                "simplemente porque contiene alimentos.\n\n"
                 "Documento:\n"
                 f"--- INICIO ---\n{contenido}\n--- FIN ---\n\n"
                 "Responde ÚNICAMENTE con el nombre de la categoría en una sola palabra en español, sin puntos ni explicaciones:"
