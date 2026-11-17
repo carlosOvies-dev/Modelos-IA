@@ -48,7 +48,7 @@ Este proyecto implementa un sistema multiagente con **LangGraph** conectado a un
        API_KEY_IA=
 
        # Nombre del modelo de Gemini a usar cuando hay clave
-       MODELO_GEMINI=gemini-3.6-flash
+       MODELO_GEMINI=gemini-2.5-flash
 
        # Modelo local descargado en Ollama y la direccion donde escucha
        MODELO_OLLAMA=qwen2.5:7b-instruct
