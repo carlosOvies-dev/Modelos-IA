@@ -9,9 +9,18 @@ from chunking import trocear_documentos
 carpeta_actual = Path(__file__).parent
 load_dotenv(carpeta_actual / ".env")
 
+
+def leer_variable(nombre: str) -> str:
+    # si la variable no esta en el .env o esta vacia, paramos el programa y avisamos
+    valor = os.getenv(nombre)
+    if not valor or not valor.strip():
+        raise ValueError(f"Falta configurar la variable {nombre} en el archivo .env")
+    return valor.strip()
+
+
 carpeta_chroma = carpeta_actual / "chroma_rag"
 nombre_coleccion = "animales_marinos"
-nombre_modelo_embeddings = os.getenv("MODELO_EMBEDDINGS", "BAAI/bge-m3")
+nombre_modelo_embeddings = leer_variable("MODELO_EMBEDDINGS")
 
 
 def limpiar_metadatos(chunk) -> dict:
